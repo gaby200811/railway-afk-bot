@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aurora Bot / Control</title>
+    <link rel="icon" type="image/png" href="/aurora-bot.png">
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <video class="background-video" autoplay muted loop playsinline aria-hidden="true">
+      <source src="/aurora-background.mp4" type="video/mp4">
+    </video>
+    <div class="video-overlay" aria-hidden="true"></div>
+    <div class="snowfield" id="snowfield" aria-hidden="true"></div>
+    <main class="shell">
+      <header class="topbar">
+        <div class="brand"><img class="brand-mark" src="/aurora-bot.png" alt="Aurora Bot"><span>Aurora <b>Bot</b></span></div>
+        <div class="topbar-meta"><span class="live-dot"></span><span>OPERATOR CONSOLE</span><span class="topbar-divider"></span><span id="clock">--:--</span></div>
+      </header>
+
+      <section class="hero-row">
+        <div>
+          <p class="eyebrow">AURORA BOT / OPERATIONS</p>
+          <h1>Quiet control for your server.</h1>
+          <p class="lede">Connection, chat, and runtime controls in one place.</p>
+        </div>
+        <div class="connection-card">
+          <span class="status-label">CONNECTION</span>
+          <strong id="status">Offline</strong>
+          <span id="endpoint">pmcnet.in:19132 · Java 1.21.11</span>
+        </div>
+      </section>
+
+      <section class="metrics" aria-label="Bot details">
+        <div class="metric"><span>BOT ACCOUNT</span><strong id="username">--</strong></div>
+        <div class="metric"><span>LAST EVENT</span><strong id="last-event">Waiting to connect</strong></div>
+        <div class="metric"><span>MODE</span><strong id="navigation-mode">Idle</strong></div>
+      </section>
+
+      <section class="workspace">
+        <div class="panel console-panel">
+          <div class="panel-heading"><div><p class="eyebrow">ACTIVITY</p><h2>Live console <button class="info-button" data-tooltip="Server messages, bot events, and commands sent from this panel." aria-label="About live console">i</button></h2></div><span class="event-count" id="event-count">0 events</span></div>
+          <div class="console" id="console" aria-live="polite"></div>
+          <form class="command-form" id="command-form">
+            <span class="prompt-symbol">›</span>
+            <input id="command" autocomplete="off" placeholder="Send a Minecraft command or message...">
+            <button type="submit" title="Send command">Send <span>↵</span></button>
+          </form>
+          <section class="telemetry" aria-label="Bot telemetry">
+            <div class="telemetry-heading"><p class="eyebrow">TELEMETRY</p><button class="info-button" data-tooltip="Live values reported by the connected bot." aria-label="About bot telemetry">i</button></div>
+            <div class="spec-grid">
+              <div class="spec"><span>HEALTH</span><strong id="health">--</strong><small>/ 20</small></div>
+              <div class="spec"><span>HUNGER</span><strong id="food">--</strong><small>/ 20</small></div>
+              <div class="spec"><span>POSITION</span><strong id="position">--</strong></div>
+              <div class="spec"><span>LATENCY</span><strong id="ping">--</strong><small>ms</small></div>
+            </div>
+          </section>
+          <section class="runtime-summary" aria-label="Runtime summary">
+            <div class="telemetry-heading"><p class="eyebrow">RUNTIME PROFILE</p><button class="info-button" data-tooltip="The capabilities currently active in Aurora Bot." aria-label="About runtime profile">i</button></div>
+            <div class="runtime-list">
+              <div><span>AUTHENTICATION</span><strong>Automatic login</strong></div>
+              <div><span>AFK BEHAVIOR</span><strong>Pathfinder movement</strong></div>
+              <div><span>FARMING AUTOMATION</span><strong class="planned">Planned</strong></div>
+            </div>
+          </section>
+        </div>
+
+        <aside class="panel controls-panel">
+          <div class="panel-heading"><div><p class="eyebrow">CONTROL</p><h2>Bot controls <button class="info-button" data-tooltip="Start, stop, or reconnect the Minecraft bot." aria-label="About bot controls">i</button></h2></div></div>
+          <div class="control-actions">
+            <button class="button button-primary" data-action="start">Start bot <span>→</span></button>
+            <button class="button" data-action="reconnect">Reconnect <span>↻</span></button>
+            <button class="button button-danger" data-action="stop">Stop bot <span>×</span></button>
+          </div>
+          <div class="route-section">
+            <div class="subheading"><p class="eyebrow">NAVIGATION <span class="beta-badge">BETA</span></p><h3>Farm route <button class="info-button" data-tooltip="Save walkable positions and send the bot to them with pathfinding." aria-label="About farm route">i</button></h3></div>
+            <div class="route-status"><span class="route-indicator" id="route-indicator"></span><span id="route-status">Not recording</span><strong id="route-count">0 points</strong></div>
+            <div class="route-actions">
+              <button class="button button-record" data-route="start">Record route <span>●</span></button>
+              <button class="button" data-route="stop">Stop recording <span>■</span></button>
+            </div>
+            <div class="checkpoint-row"><input id="checkpoint-label" placeholder="Checkpoint name"><button class="button" data-route="checkpoint">Save point <span>+</span></button></div>
+            <div class="route-list" id="route-list"><span class="empty-route">No checkpoints saved</span></div>
+            <button class="clear-route" data-route="clear">Clear saved route</button>
+          </div>
+          <form class="config-form" id="config-form">
+            <div class="subheading"><p class="eyebrow">CONNECTION</p><h3>Server settings <button class="info-button" data-tooltip="Change the server address, port, account, version, or login password." aria-label="About server settings">i</button></h3></div>
+            <label>Server address<input id="config-host" required></label>
+            <label>Port<input id="config-port" type="number" min="1" max="65535" required></label>
+            <label>Bot username<input id="config-username" required></label>
+            <label>Version<select id="config-version" required></select></label>
+            <label>Password<input id="config-password" type="password" placeholder="Leave unchanged"></label>
+            <button class="button button-save" type="submit">Save settings <span>✓</span></button>
+            <p class="form-message" id="form-message"></p>
+          </form>
+          <div class="note"><span class="note-icon">i</span><p>Chest filling is not active. This panel currently handles connection monitoring and live chat only.</p></div>
+        </aside>
+      </section>
+      <footer class="footer"><span>Aurora Bot</span><span>Built by <strong>thecoolguy0077</strong></span><a href="https://discord.com/users/1354472117646786763" target="_blank" rel="noreferrer">Discord profile ↗</a></footer>
+    </main>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/app.js"></script>
+  </body>
+</html>
