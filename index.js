@@ -30,7 +30,7 @@ const state = {
   status: 'offline',
   host: 'pmcnet.in',
   port: 19132,
-  username: 'chill_dude1',
+  username: process.env.MC_USERNAME || 'chill_dude1',
   version: '1.21.11',
   supportedVersions: supportedJavaVersions,
   lastEvent: 'Waiting to connect',
