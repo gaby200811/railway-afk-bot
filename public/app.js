@@ -34,11 +34,17 @@ function updateState(state) {
   document.querySelector('#food').textContent = state.food ?? '--';
   document.querySelector('#position').textContent = state.position ?? '--';
   document.querySelector('#ping').textContent = state.ping ?? '--';
-  document.querySelector('#config-host').value = state.host;
-  document.querySelector('#config-port').value = state.port;
-  document.querySelector('#config-username').value = state.username;
+  setIfNotFocused('#config-host', state.host);
+  setIfNotFocused('#config-port', state.port);
+  setIfNotFocused('#config-username', state.username);
   renderVersionOptions(state.supportedVersions);
-  document.querySelector('#config-version').value = state.version;
+  setIfNotFocused('#config-version', state.version);
+}
+
+function setIfNotFocused(selector, value) {
+  const el = document.querySelector(selector);
+  if (document.activeElement === el) return;
+  el.value = value;
 }
 
 function addLog(entry) {
