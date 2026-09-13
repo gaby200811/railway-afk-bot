@@ -1,370 +1,254 @@
-const mineflayer = require('mineflayer');
-const minecraftData = require('minecraft-data');
+require('dotenv').config();
+
+const path = require('path');
 const express = require('express');
 const http = require('node:http');
-const fs = require('node:fs');
-const path = require('node:path');
+const session = require('express-session');
 const { Server } = require('socket.io');
-const { pathfinder, Movements, goals } = require('mineflayer-pathfinder');
+const { Movements, goals } = require('mineflayer-pathfinder');
 
-let bot;
-let reconnectTimer;
-let shouldRun = true;
-let movementTimers = [];
-let activeDirection;
-let navigationMode = 'idle';
-let routeRecording = false;
-let loginPassword = process.env.MC_PASSWORD || 'Bot@12345';
+const { requireAuth, requireAdmin } = require('./lib/auth');
+const userStore = require('./lib/userStore');
+const botManager = require('./lib/botManager');
+const { isRateLimited, recordAttempt, clearAttempts } = require('./lib/rateLimiter');
+
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+const SESSION_SECRET = process.env.SESSION_SECRET;
+
+// Refuse to boot with insecure defaults rather than silently running unprotected.
+if (!ADMIN_PASSWORD) {
+  console.error('FATAL: ADMIN_PASSWORD is not set. Create a .env file (see .env.example) or set it in your host\'s environment variables.');
+  process.exit(1);
+}
+if (!SESSION_SECRET) {
+  console.error('FATAL: SESSION_SECRET is not set. Generate one with: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"');
+  process.exit(1);
+}
+
 const app = express();
 const httpServer = http.createServer(app);
 const io = new Server(httpServer);
-const logs = [];
-const dataDir = process.env.RAILWAY_VOLUME_MOUNT_PATH || __dirname;
-const routeFile = path.join(dataDir, 'route.json');
-let route = fs.existsSync(routeFile) ? JSON.parse(fs.readFileSync(routeFile, 'utf8')) : [];
-const supportedVersions = minecraftData.supportedVersions.pc;
-const latestSupportedIndex = supportedVersions.indexOf('1.21.11');
-const supportedJavaVersions = supportedVersions.slice(0, latestSupportedIndex + 1);
 
-const state = {
-  status: 'offline',
-  host: 'pmcnet.in',
-  port: 19132,
-  username: 'chill_dude1',
-  version: '1.21.11',
-  supportedVersions: supportedJavaVersions,
-  lastEvent: 'Waiting to connect',
-  health: null,
-  food: null,
-  ping: null,
-  position: null,
-  navigation: 'idle'
-};
-
-function updateTelemetry() {
-  state.navigation = navigationMode;
-  if (bot?.entity) {
-    state.health = Math.round(bot.health * 10) / 10;
-    state.food = Math.round(bot.food * 10) / 10;
-    state.ping = bot.player?.ping ?? null;
-    state.position = `${Math.floor(bot.entity.position.x)}, ${Math.floor(bot.entity.position.y)}, ${Math.floor(bot.entity.position.z)}`;
-  } else {
-    state.health = null;
-    state.food = null;
-    state.ping = null;
-    state.position = null;
-  }
-  io.emit('state', state);
-}
-
-function addLog(message, level = 'info') {
-  const entry = {
-    message,
-    level,
-    time: new Date().toISOString()
-  };
-
-  logs.push(entry);
-  if (logs.length > 100) logs.shift();
-  state.lastEvent = message;
-  io.emit('log', entry);
-  io.emit('state', state);
-  console.log(message);
-}
-
-function sendChat(message) {
-  if (!bot?.entity) {
-    addLog('Command skipped: bot is not connected', 'warning');
-    return false;
-  }
-
-  bot.chat(message);
-  addLog(`You: ${message}`, 'command');
-  return true;
-}
-
-function stopMovement() {
-  movementTimers.forEach(timer => clearTimeout(timer));
-  movementTimers = [];
-  if (bot && activeDirection) bot.setControlState(activeDirection, false);
-  if (bot?.pathfinder) bot.pathfinder.setGoal(null);
-  activeDirection = undefined;
-}
-
-function emitRoute() {
-  io.emit('route', { recording: routeRecording, points: route });
-}
-
-function saveRoute() {
-  fs.writeFileSync(routeFile, JSON.stringify(route, null, 2));
-}
-
-function addCheckpoint(label) {
-  if (!bot?.entity) return false;
-  const point = {
-    label: label || `Checkpoint ${route.length + 1}`,
-    x: Math.round(bot.entity.position.x * 100) / 100,
-    y: Math.round(bot.entity.position.y * 100) / 100,
-    z: Math.round(bot.entity.position.z * 100) / 100
-  };
-  route.push(point);
-  saveRoute();
-  addLog(`Route checkpoint saved: ${point.label} (${point.x}, ${point.y}, ${point.z})`, 'success');
-  emitRoute();
-  return true;
-}
-
-function createBot() {
-  if (bot || !shouldRun) return;
-
-  state.status = 'connecting';
-  addLog(`Connecting to ${state.host}:${state.port} on ${state.version}...`);
-
-  bot = mineflayer.createBot({
-    host: state.host,
-    port: state.port,
-    username: state.username,
-    version: state.version === 'auto' ? false : state.version
-  });
-  bot.loadPlugin(pathfinder);
-
-  function handleServerMessage(message) {
-    const text = message.toString();
-    const msg = text.toLowerCase();
-    addLog(text, 'server');
-
-    if (msg.includes('/register') || msg.includes('please register')) {
-      addLog('Registration prompt detected', 'system');
-      sendChat(`/register ${loginPassword}`);
-    } else if (msg.includes('/login') || msg.includes('please login')) {
-      addLog('Login prompt detected', 'system');
-      sendChat(`/login ${loginPassword}`);
-    }
-
-    if (
-      msg.includes('teleport to you') ||
-      msg.includes('teleport to them')
-    ) {
-      addLog('Teleport request detected. Accepting...', 'system');
-      sendChat('/tpaccept');
-    }
-  }
-
-  bot.on('messagestr', handleServerMessage);
-
-  bot.on('chat', (username, message) => {
-    if (username === bot.username) return;
-    const lower = message.toLowerCase();
-
-    if (lower.startsWith('!')) {
-      const args = lower.slice(1).split(' ');
-      const command = args.shift();
-
-      switch (command) {
-        case 'help':
-          sendChat(`Hi ${username}, I respond to hello, how are you, and commands like !help, !ping.`);
-          break;
-        case 'sunilgaming':
-          sendChat(`Hey ${username}, sunilgaming created me!`);
-          break;
-        case 'ping':
-          sendChat(`Pong, ${username}!`);
-          break;
-        default:
-          sendChat(`Unknown command: ${command}`);
-      }
-    } else {
-      if (lower.includes('hello')) sendChat(`Hi ${username}!`);
-      else if (lower.includes('how are you')) sendChat(`I'm just a bot, but thanks for asking!`);
-    }
-    addLog(`${username}: ${message}`, 'chat');
-  });
-
-  bot.on('whisper', (username, message) => {
-    if (username === bot.username) return;
-    addLog(`[Whisper] <${username}>: ${message}`, 'chat');
-    sendChat(`/tell ${username} Hello ${username}, I got your message!`);
-  });
-
-  function randomMovement() {
-    if (!bot?.entity || !shouldRun || navigationMode === 'route') return;
-    const x = bot.entity.position.x + (Math.random() > 0.5 ? 1 : -1) * (3 + Math.floor(Math.random() * 5));
-    const z = bot.entity.position.z + (Math.random() > 0.5 ? 1 : -1) * (3 + Math.floor(Math.random() * 5));
-    navigationMode = 'afk';
-    bot.pathfinder.setGoal(new goals.GoalNear(x, bot.entity.position.y, z, 1));
-    addLog(`AFK movement target: ${Math.round(x)}, ${Math.round(z)}`, 'system');
-  }
-
-  bot.once('spawn', () => {
-    state.status = 'online';
-    addLog(`Connected as ${bot.username}`, 'success');
-    bot.pathfinder.setMovements(new Movements(bot));
-    setTimeout(() => {
-      randomMovement();
-    }, 1000);
-  });
-
-  bot.on('goal_reached', goal => {
-    const wasRoute = navigationMode === 'route';
-    addLog(wasRoute ? `Reached route checkpoint near ${goal.x}, ${goal.y}, ${goal.z}` : 'AFK movement target reached', 'success');
-    navigationMode = 'idle';
-    if (shouldRun) setTimeout(randomMovement, wasRoute ? 1000 : 2000);
-  });
-
-  bot.on('path_reset', reason => {
-    if (reason === 'goal_updated') return;
-    addLog(`Pathfinding stopped: ${reason}`, 'warning');
-    if (navigationMode === 'route') return;
-    navigationMode = 'idle';
-    if (shouldRun && reason === 'stuck') setTimeout(randomMovement, 2000);
-  });
-
-  bot.on('end', () => {
-    movementTimers.forEach(timer => clearTimeout(timer));
-    movementTimers = [];
-    bot = null;
-    state.status = 'offline';
-    addLog('Bot disconnected', 'warning');
-    if (shouldRun) {
-      addLog('Reconnecting in 5 seconds...', 'system');
-      reconnectTimer = setTimeout(createBot, 5000);
-    }
-  });
-
-  bot.on('error', err => {
-    addLog(`Bot error: ${err.message}`, 'error');
-  });
-
-  bot.on('kicked', reason => {
-    addLog(`Bot was kicked: ${JSON.stringify(reason)}`, 'error');
-  });
-}
-
-function stopBot() {
-  shouldRun = false;
-  navigationMode = 'idle';
-  clearTimeout(reconnectTimer);
-  stopMovement();
-  if (bot) bot.quit('Stopped from control panel');
-  bot = null;
-  state.status = 'offline';
-  addLog('Bot stopped from control panel', 'warning');
-}
-
-function startBot() {
-  if (bot) return;
-  shouldRun = true;
-  createBot();
-}
-
-function reconnectBot() {
-  shouldRun = false;
-  navigationMode = 'idle';
-  clearTimeout(reconnectTimer);
-  stopMovement();
-  if (bot) bot.quit('Reconnecting from control panel');
-  bot = null;
-  state.status = 'offline';
-  setTimeout(() => {
-    shouldRun = true;
-    createBot();
-  }, 250);
-}
-
-app.use(express.static(path.join(__dirname, 'public')));
+app.set('trust proxy', 1); // required for secure cookies behind Railway/most PaaS reverse proxies
 app.use(express.json());
 
-app.get('/api/state', (request, response) => {
-  response.json({ state, logs, supportedVersions: supportedJavaVersions });
+const sessionMiddleware = session({
+  name: 'aurora.sid',
+  secret: SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 1000 * 60 * 60 * 24 * 7
+  }
+});
+app.use(sessionMiddleware);
+io.engine.use(sessionMiddleware);
+
+// ---------------------------------------------------------------------------
+// Auth
+// ---------------------------------------------------------------------------
+app.post('/api/auth/login', (req, res) => {
+  const ip = req.ip || 'unknown';
+  const { username, password } = req.body || {};
+  if (!username || !password) return res.status(400).json({ error: 'Username and password are required' });
+  if (isRateLimited(ip)) return res.status(429).json({ error: 'Too many attempts. Try again in a few minutes.' });
+
+  let authedUser = null;
+  if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+    authedUser = { username: ADMIN_USERNAME, role: 'admin' };
+  } else {
+    authedUser = userStore.verifyUser(username, password);
+  }
+
+  if (!authedUser) {
+    recordAttempt(ip);
+    return res.status(401).json({ error: 'Invalid username or password' });
+  }
+  clearAttempts(ip);
+  req.session.regenerate(err => {
+    if (err) return res.status(500).json({ error: 'Login failed, please try again' });
+    req.session.user = authedUser;
+    res.json({ user: authedUser });
+  });
+});
+
+app.post('/api/auth/logout', (req, res) => {
+  req.session.destroy(() => res.json({ ok: true }));
+});
+
+app.get('/api/auth/me', (req, res) => {
+  if (!req.session.user) return res.status(401).json({ error: 'Not authenticated' });
+  res.json({ user: req.session.user });
+});
+
+// ---------------------------------------------------------------------------
+// Admin: user management (no public self-registration exists anywhere)
+// ---------------------------------------------------------------------------
+app.get('/api/admin/users', requireAuth, requireAdmin, (req, res) => {
+  res.json({ users: userStore.listUsers() });
+});
+
+app.post('/api/admin/users', requireAuth, requireAdmin, (req, res) => {
+  const { username, password } = req.body || {};
+  if (!username || !password || password.length < 6) {
+    return res.status(400).json({ error: 'Username and a password of at least 6 characters are required' });
+  }
+  try {
+    const user = userStore.createUser(username.trim(), password);
+    res.json({ user });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.delete('/api/admin/users/:username', requireAuth, requireAdmin, (req, res) => {
+  const { username } = req.params;
+  botManager.remove(username);
+  const removed = userStore.deleteUser(username);
+  res.json({ removed });
+});
+
+// ---------------------------------------------------------------------------
+// Pages
+// ---------------------------------------------------------------------------
+app.get('/login', (req, res) => {
+  if (req.session.user) return res.redirect('/');
+  res.sendFile(path.join(__dirname, 'public', 'login.html'));
+});
+
+app.get('/admin', requireAuth, requireAdmin, (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
+app.get('/', requireAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+app.use(express.static(path.join(__dirname, 'public')));
+
+// ---------------------------------------------------------------------------
+// Bot control API — every route below is scoped to req.session.user.username,
+// so each logged-in user only ever sees and controls their own bot instance.
+// ---------------------------------------------------------------------------
+app.get('/api/state', requireAuth, (req, res) => {
+  const bot = botManager.getOrCreate(req.session.user.username, io);
+  res.json({ state: bot.state, logs: bot.logs, supportedVersions: bot.state.supportedVersions });
+});
+
+app.post('/api/chat', requireAuth, (req, res) => {
+  const bot = botManager.getOrCreate(req.session.user.username, io);
+  const message = typeof req.body.message === 'string' ? req.body.message.trim() : '';
+  if (!message) return res.status(400).json({ error: 'Message is required' });
+  res.json({ sent: bot.sendChat(message) });
+});
+
+app.post('/api/config', requireAuth, (req, res) => {
+  const bot = botManager.getOrCreate(req.session.user.username, io);
+  const result = bot.updateConfig(req.body || {});
+  if (!result.ok) return res.status(400).json({ error: result.error });
+  res.json({ state: bot.state });
+});
+
+app.post('/api/route/:action', requireAuth, (req, res) => {
+  const bot = botManager.getOrCreate(req.session.user.username, io);
+  const { action } = req.params;
+
+  if (action === 'start') {
+    bot.routeRecording = true;
+    bot.addLog('Route recording started', 'system');
+  } else if (action === 'stop') {
+    bot.routeRecording = false;
+    bot.persist();
+    bot.addLog(`Route recording stopped with ${bot.route.length} checkpoints`, 'system');
+  } else if (action === 'checkpoint') {
+    if (!bot.routeRecording) return res.status(400).json({ error: 'Start route recording first' });
+    if (!bot.addCheckpoint(req.body.label)) return res.status(400).json({ error: 'Bot is not connected' });
+  } else if (action === 'clear') {
+    bot.route = [];
+    bot.persist();
+    bot.addLog('Route checkpoints cleared', 'warning');
+  } else if (action === 'goto') {
+    const point = bot.route[Number(req.body.index)];
+    if (!point) return res.status(404).json({ error: 'Checkpoint not found' });
+    if (!bot.bot?.entity) return res.status(400).json({ error: 'Bot is not connected' });
+    bot.stopMovement();
+    bot.navigationMode = 'route';
+    const goal = new goals.GoalNear(Math.floor(point.x), Math.floor(point.y), Math.floor(point.z), 1);
+    bot.bot.pathfinder.setMovements(new Movements(bot.bot));
+    const navigation = bot.bot.pathfinder.goto(goal);
+    const timeout = new Promise((resolve, reject) => setTimeout(() => reject(new Error('timed out after 60 seconds')), 60000));
+    Promise.race([navigation, timeout])
+      .then(() => {
+        bot.navigationMode = 'idle';
+        bot.addLog(`Reached route checkpoint: ${point.label}`, 'success');
+      })
+      .catch(error => {
+        bot.navigationMode = 'idle';
+        bot.bot?.pathfinder?.setGoal(null);
+        bot.addLog(`Could not reach ${point.label}: ${error.message}`, 'error');
+      });
+    bot.addLog(`Walking to checkpoint: ${point.label}`, 'system');
+  } else {
+    return res.status(404).json({ error: 'Unknown route action' });
+  }
+  bot.emitRoute();
+  res.json({ recording: bot.routeRecording, points: bot.route });
+});
+
+app.post('/api/action/:action', requireAuth, (req, res) => {
+  const bot = botManager.getOrCreate(req.session.user.username, io);
+  const { action } = req.params;
+  if (action === 'start') bot.start();
+  else if (action === 'stop') bot.stop();
+  else if (action === 'reconnect') bot.reconnect();
+  else return res.status(404).json({ error: 'Unknown action' });
+  res.json(bot.state);
+});
+
+// ---------------------------------------------------------------------------
+// Socket.io — authenticated via the same session cookie, each socket only
+// joins its own user's private room.
+// ---------------------------------------------------------------------------
+io.use((socket, next) => {
+  const user = socket.request.session?.user;
+  if (!user) return next(new Error('unauthorized'));
+  socket.user = user;
+  next();
 });
 
 io.on('connection', socket => {
-  socket.emit('state', state);
-  socket.emit('history', logs);
-  socket.emit('versions', supportedJavaVersions);
-  socket.emit('route', { recording: routeRecording, points: route });
+  const bot = botManager.getOrCreate(socket.user.username, io);
+  socket.join(bot.room);
+  socket.emit('state', bot.state);
+  socket.emit('history', bot.logs);
+  socket.emit('versions', bot.state.supportedVersions);
+  socket.emit('route', { recording: bot.routeRecording, points: bot.route });
 });
 
-app.post('/api/chat', (request, response) => {
-  const message = typeof request.body.message === 'string' ? request.body.message.trim() : '';
-  if (!message) return response.status(400).json({ error: 'Message is required' });
-  response.json({ sent: sendChat(message) });
-});
+// ---------------------------------------------------------------------------
+// Resilience: don't let one bad event handler take the whole panel down.
+// ---------------------------------------------------------------------------
+process.on('unhandledRejection', err => console.error('Unhandled rejection:', err));
+process.on('uncaughtException', err => console.error('Uncaught exception:', err));
 
-app.post('/api/config', (request, response) => {
-  const { host, port, username, version, password } = request.body;
-  const nextPort = Number(port);
-
-  if (!host || !Number.isInteger(nextPort) || nextPort < 1 || nextPort > 65535 || !username || !version || (version !== 'auto' && !supportedJavaVersions.includes(version))) {
-    return response.status(400).json({ error: 'Host, port, username, and version are required' });
+function shutdown() {
+  console.log('Shutting down, disconnecting all bots...');
+  for (const bot of botManager.all()) {
+    try { bot.stop(); } catch (err) { console.error(err); }
   }
-
-  state.host = host.trim();
-  state.port = nextPort;
-  state.username = username.trim();
-  state.version = version.trim();
-  if (typeof password === 'string' && password.length > 0) loginPassword = password;
-  addLog(`Configuration updated for ${state.host}:${state.port}`, 'system');
-  response.json({ state });
-});
-
-app.post('/api/route/:action', (request, response) => {
-  const { action } = request.params;
-  if (action === 'start') {
-    routeRecording = true;
-    addLog('Route recording started', 'system');
-  } else if (action === 'stop') {
-    routeRecording = false;
-    saveRoute();
-    addLog(`Route recording stopped with ${route.length} checkpoints`, 'system');
-  } else if (action === 'checkpoint') {
-    if (!routeRecording) return response.status(400).json({ error: 'Start route recording first' });
-    if (!addCheckpoint(request.body.label)) return response.status(400).json({ error: 'Bot is not connected' });
-  } else if (action === 'clear') {
-    route = [];
-    saveRoute();
-    addLog('Route checkpoints cleared', 'warning');
-  } else if (action === 'goto') {
-    const point = route[Number(request.body.index)];
-    if (!point) return response.status(404).json({ error: 'Checkpoint not found' });
-    if (!bot?.entity) return response.status(400).json({ error: 'Bot is not connected' });
-    stopMovement();
-    navigationMode = 'route';
-    const goal = new goals.GoalNear(Math.floor(point.x), Math.floor(point.y), Math.floor(point.z), 1);
-    bot.pathfinder.setMovements(new Movements(bot));
-    const navigation = bot.pathfinder.goto(goal);
-    const timeout = new Promise((resolve, reject) => {
-      setTimeout(() => reject(new Error('timed out after 60 seconds')), 60000);
-    });
-    Promise.race([navigation, timeout])
-      .then(() => {
-        navigationMode = 'idle';
-        addLog(`Reached route checkpoint: ${point.label}`, 'success');
-      })
-      .catch(error => {
-        navigationMode = 'idle';
-        bot?.pathfinder?.setGoal(null);
-        addLog(`Could not reach ${point.label}: ${error.message}`, 'error');
-      });
-    addLog(`Walking to checkpoint: ${point.label}`, 'system');
-  } else return response.status(404).json({ error: 'Unknown route action' });
-  emitRoute();
-  response.json({ recording: routeRecording, points: route });
-});
-
-app.post('/api/action/:action', (request, response) => {
-  const { action } = request.params;
-  if (action === 'start') startBot();
-  else if (action === 'stop') stopBot();
-  else if (action === 'reconnect') reconnectBot();
-  else return response.status(404).json({ error: 'Unknown action' });
-  response.json(state);
-});
+  setTimeout(() => process.exit(0), 500);
+}
+process.on('SIGTERM', shutdown);
+process.on('SIGINT', shutdown);
 
 const panelPort = Number(process.env.PORT || process.env.PANEL_PORT || 3000);
-setInterval(updateTelemetry, 1000);
-httpServer.listen(panelPort, process.env.PANEL_HOST || '0.0.0.0', () => {
-  addLog(`Control panel running on port ${panelPort}`, 'success');
-});
+setInterval(() => { for (const bot of botManager.all()) bot.updateTelemetry(); }, 1000);
 
-createBot();
+httpServer.listen(panelPort, process.env.PANEL_HOST || '0.0.0.0', () => {
+  console.log(`Control panel running on port ${panelPort}`);
+  console.log(`Admin login: ${ADMIN_USERNAME}`);
+});

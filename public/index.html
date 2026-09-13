@@ -16,7 +16,7 @@
     <main class="shell">
       <header class="topbar">
         <div class="brand"><img class="brand-mark" src="/aurora-bot.png" alt="Aurora Bot"><span>Aurora <b>Bot</b></span></div>
-        <div class="topbar-meta"><span class="live-dot"></span><span>OPERATOR CONSOLE</span><span class="topbar-divider"></span><span id="clock">--:--</span></div>
+        <div class="topbar-meta"><span class="live-dot"></span><span>OPERATOR CONSOLE</span><span class="topbar-divider"></span><span id="clock">--:--</span><span class="topbar-divider"></span><a class="admin-link" id="admin-link" href="/admin" hidden>Admin</a><span class="user-chip" id="user-chip">--</span><button class="logout-button" id="logout-button" title="Log out">Log out</button></div>
       </header>
 
       <section class="hero-row">
@@ -100,6 +100,7 @@
       <footer class="footer"><span>Aurora Bot</span><span>Built by <strong>thecoolguy0077</strong></span><a href="https://discord.com/users/1354472117646786763" target="_blank" rel="noreferrer">Discord profile ↗</a></footer>
     </main>
     <script src="/socket.io/socket.io.js"></script>
+    <script src="/auth-nav.js"></script>
     <script src="/app.js"></script>
   </body>
 </html>

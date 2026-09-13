@@ -28,3 +28,44 @@ body::before { content: ''; position: fixed; inset: 0; pointer-events: none; z-i
 @media (max-width: 760px) { .runtime-summary { padding-inline: 14px; }.runtime-list { grid-template-columns: repeat(2, 1fr); }.info-button::after { left: auto; right: 0; top: 26px; transform: translateY(-4px); }.info-button:hover::after, .info-button:focus-visible::after { transform: translateY(0); } }
 .console-panel, .controls-panel { align-self: start; }.console { height: 320px; }.workspace { align-items: start; }
 .info-button { position: relative; display: inline-grid; place-items: center; width: 16px; height: 16px; margin-left: 5px; border: 1px solid var(--muted); border-radius: 50%; background: transparent; color: var(--muted); cursor: help; font: 11px Georgia, serif; vertical-align: 1px; transition: color .2s ease, border-color .2s ease, transform .2s ease; }.info-button:hover, .info-button:focus-visible { border-color: var(--lime); color: var(--lime); transform: translateY(-1px); outline: none; }.beta-badge { display: inline-block; margin-left: 7px; padding: 3px 5px; border: 1px solid #8a7a4a; border-radius: 3px; color: #f4c875; font-size: 9px; letter-spacing: .7px; vertical-align: 2px; }.button, .command-form button, .point-go { transition: border-color .2s ease, background-color .2s ease, color .2s ease, transform .2s ease, box-shadow .2s ease; }.button:hover, .command-form button:hover { transform: translateY(-1px); box-shadow: 0 5px 14px #00000035; }.button-primary:hover { background: #c8f873; border-color: #c8f873; }.point-go:hover { transform: translateX(2px); box-shadow: 0 4px 10px #00000035; }.config-form input:hover, .config-form select:hover, .checkpoint-row input:hover { border-color: #536057; }.console-panel, .controls-panel { box-shadow: 0 12px 34px #0000001f; }
+/* ---- Auth nav: user chip, admin link, logout ---- */
+.user-chip { padding: 4px 9px; border: 1px solid var(--line); border-radius: 12px; color: var(--text); font: 10px 'DM Mono', monospace; letter-spacing: .4px; }
+.admin-link { color: var(--lime); text-decoration: none; font: 10px 'DM Mono', monospace; letter-spacing: .6px; border: 1px solid #5d477c; border-radius: 12px; padding: 4px 9px; transition: background-color .2s ease, color .2s ease; }
+.admin-link:hover { background: var(--lime); color: #11150e; }
+.logout-button { border: 1px solid var(--line); border-radius: 12px; background: transparent; color: var(--muted); padding: 4px 10px; font: 10px 'DM Mono', monospace; letter-spacing: .4px; cursor: pointer; transition: border-color .2s ease, color .2s ease; }
+.logout-button:hover { border-color: var(--red); color: var(--red); }
+
+/* ---- Button loading state ---- */
+.button.is-loading, .command-form button.is-loading { position: relative; color: transparent !important; pointer-events: none; }
+.button.is-loading span, .command-form button.is-loading span { visibility: hidden; }
+.button.is-loading::after, .command-form button.is-loading::after {
+  content: ''; position: absolute; inset: 0; margin: auto; width: 14px; height: 14px;
+  border: 2px solid #ffffff33; border-top-color: var(--lime); border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---- Confirm modal ---- */
+.confirm-overlay { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; background: #0a0812cc; backdrop-filter: blur(3px); animation: fade-in .15s ease; }
+.confirm-box { width: min(360px, 88vw); border: 1px solid var(--line); border-radius: 8px; background: var(--panel); padding: 22px; box-shadow: 0 20px 50px #00000060; }
+.confirm-box p { margin: 0 0 18px; font-size: 13px; line-height: 1.5; color: var(--text); }
+.confirm-actions { display: flex; justify-content: flex-end; gap: 8px; }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* ---- Login page ---- */
+.login-body { display: grid; place-items: center; min-height: 100vh; margin: 0; }
+.login-shell { width: min(400px, 92vw); position: relative; z-index: 1; }
+.login-card { border: 1px solid var(--line); border-radius: 10px; background: #171421cc; backdrop-filter: blur(6px); padding: 36px 32px 30px; box-shadow: 0 24px 60px #00000055; }
+.login-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 22px; font-size: 15px; }
+.login-brand b { font-weight: 800; }
+.login-card h1 { margin: 0 0 8px; font-size: 26px; letter-spacing: -1px; }
+.login-card .eyebrow { margin-bottom: 10px; }
+.login-card .lede { margin: 0 0 22px; color: var(--muted); font-size: 13px; line-height: 1.5; }
+.login-form label { margin: 0 0 14px; }
+.login-footer { border: 0; margin-top: 22px; justify-content: center; gap: 10px; padding-top: 0; }
+
+/* ---- Admin page ---- */
+.admin-workspace { grid-template-columns: minmax(0, 1fr) 340px; }
+.user-list { max-height: 460px; overflow: auto; padding: 6px 20px 14px; }
+.user-row { border-top: 1px solid var(--line); }
+.user-row:first-child { border-top: 0; }

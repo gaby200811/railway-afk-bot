@@ -34,17 +34,25 @@ function updateState(state) {
   document.querySelector('#food').textContent = state.food ?? '--';
   document.querySelector('#position').textContent = state.position ?? '--';
   document.querySelector('#ping').textContent = state.ping ?? '--';
-  setIfNotFocused('#config-host', state.host);
-  setIfNotFocused('#config-port', state.port);
-  setIfNotFocused('#config-username', state.username);
+  setIfClean('#config-host', state.host);
+  setIfClean('#config-port', state.port);
+  setIfClean('#config-username', state.username);
   renderVersionOptions(state.supportedVersions);
-  setIfNotFocused('#config-version', state.version);
+  setIfClean('#config-version', state.version);
 }
 
-function setIfNotFocused(selector, value) {
+const dirtyFields = new Set();
+const configFieldIds = ['#config-host', '#config-port', '#config-username', '#config-version'];
+
+configFieldIds.forEach(selector => {
   const el = document.querySelector(selector);
-  if (document.activeElement === el) return;
-  el.value = value;
+  const eventName = el.tagName === 'SELECT' ? 'change' : 'input';
+  el.addEventListener(eventName, () => dirtyFields.add(selector));
+});
+
+function setIfClean(selector, value) {
+  if (dirtyFields.has(selector)) return;
+  document.querySelector(selector).value = value;
 }
 
 function addLog(entry) {
@@ -75,6 +83,24 @@ socket.on('history', entries => entries.forEach(addLog));
 socket.on('versions', renderVersionOptions);
 socket.on('route', updateRoute);
 
+socket.on('connect_error', err => {
+  if (err.message === 'unauthorized') window.location.href = '/login';
+});
+
+function withLoading(button, fn) {
+  return async event => {
+    if (button.disabled) return;
+    button.disabled = true;
+    button.classList.add('is-loading');
+    try {
+      await fn(event);
+    } finally {
+      button.disabled = false;
+      button.classList.remove('is-loading');
+    }
+  };
+}
+
 document.querySelector('#command-form').addEventListener('submit', async event => {
   event.preventDefault();
   const input = document.querySelector('#command');
@@ -85,9 +111,13 @@ document.querySelector('#command-form').addEventListener('submit', async event =
 });
 
 document.querySelectorAll('[data-action]').forEach(button => {
-  button.addEventListener('click', async () => {
+  button.addEventListener('click', withLoading(button, async () => {
+    if (button.dataset.action === 'stop') {
+      const confirmed = await window.confirmAction('Stop the bot? It will disconnect until you start it again.');
+      if (!confirmed) return;
+    }
     await fetch(`/api/action/${button.dataset.action}`, { method: 'POST' });
-  });
+  }));
 });
 
 document.querySelector('#config-form').addEventListener('submit', async event => {
@@ -103,16 +133,23 @@ document.querySelector('#config-form').addEventListener('submit', async event =>
   const response = await fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
   formMessage.textContent = response.ok ? 'Saved. Reconnect to apply.' : 'Check the connection values.';
   formMessage.className = `form-message ${response.ok ? 'success' : 'error'}`;
-  if (response.ok) document.querySelector('#config-password').value = '';
+  if (response.ok) {
+    document.querySelector('#config-password').value = '';
+    dirtyFields.clear();
+  }
 });
 
 document.querySelectorAll('[data-route]').forEach(button => {
-  button.addEventListener('click', async () => {
+  button.addEventListener('click', withLoading(button, async () => {
     const action = button.dataset.route;
+    if (action === 'clear') {
+      const confirmed = await window.confirmAction('Clear all saved checkpoints? This cannot be undone.');
+      if (!confirmed) return;
+    }
     const label = document.querySelector('#checkpoint-label').value.trim();
     const response = await fetch(`/api/route/${action}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ label }) });
     if (response.ok && action === 'checkpoint') document.querySelector('#checkpoint-label').value = '';
-  });
+  }));
 });
 
 setInterval(() => { document.querySelector('#clock').textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }, 1000);
