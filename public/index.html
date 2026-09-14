@@ -64,6 +64,13 @@
               <div><span>FARMING AUTOMATION</span><strong class="planned">Planned</strong></div>
             </div>
           </section>
+          <section class="live-view" aria-label="Live 3D view">
+            <div class="telemetry-heading"><p class="eyebrow">LIVE VIEW</p><button class="info-button" data-tooltip="A live 3D render of what your bot sees, streamed straight from the Minecraft world." aria-label="About live view">i</button></div>
+            <button class="button" id="toggle-viewer" disabled>Open 3D view <span>▶</span></button>
+            <div class="viewer-frame-wrap" id="viewer-frame-wrap" hidden>
+              <iframe id="viewer-frame" class="viewer-frame" title="Live 3D view" loading="lazy"></iframe>
+            </div>
+          </section>
         </div>
 
         <aside class="panel controls-panel">

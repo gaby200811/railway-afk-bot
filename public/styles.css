@@ -69,3 +69,10 @@ body::before { content: ''; position: fixed; inset: 0; pointer-events: none; z-i
 .user-list { max-height: 460px; overflow: auto; padding: 6px 20px 14px; }
 .user-row { border-top: 1px solid var(--line); }
 .user-row:first-child { border-top: 0; }
+
+/* ---- Live 3D view ---- */
+.live-view { border-top: 1px solid var(--line); padding: 17px 20px 20px; }
+.live-view #toggle-viewer { width: 100%; justify-content: center; }
+.live-view #toggle-viewer:disabled { opacity: .45; cursor: not-allowed; }
+.viewer-frame-wrap { margin-top: 12px; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; background: #050608; aspect-ratio: 16 / 9; }
+.viewer-frame { width: 100%; height: 100%; border: 0; display: block; }

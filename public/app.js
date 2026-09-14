@@ -34,6 +34,9 @@ function updateState(state) {
   document.querySelector('#food').textContent = state.food ?? '--';
   document.querySelector('#position').textContent = state.position ?? '--';
   document.querySelector('#ping').textContent = state.ping ?? '--';
+  const viewerButton = document.querySelector('#toggle-viewer');
+  viewerButton.disabled = !state.viewerAvailable;
+  if (!state.viewerAvailable) closeViewer();
   setIfClean('#config-host', state.host);
   setIfClean('#config-port', state.port);
   setIfClean('#config-username', state.username);
@@ -150,6 +153,29 @@ document.querySelectorAll('[data-route]').forEach(button => {
     const response = await fetch(`/api/route/${action}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ label }) });
     if (response.ok && action === 'checkpoint') document.querySelector('#checkpoint-label').value = '';
   }));
+});
+
+function closeViewer() {
+  const wrap = document.querySelector('#viewer-frame-wrap');
+  const frame = document.querySelector('#viewer-frame');
+  const button = document.querySelector('#toggle-viewer');
+  wrap.hidden = true;
+  frame.src = 'about:blank';
+  if (button) button.innerHTML = 'Open 3D view <span>▶</span>';
+}
+
+document.querySelector('#toggle-viewer').addEventListener('click', () => {
+  const wrap = document.querySelector('#viewer-frame-wrap');
+  const frame = document.querySelector('#viewer-frame');
+  const button = document.querySelector('#toggle-viewer');
+  const opening = wrap.hidden;
+  if (opening) {
+    frame.src = '/viewer/';
+    wrap.hidden = false;
+    button.innerHTML = 'Close 3D view <span>▼</span>';
+  } else {
+    closeViewer();
+  }
 });
 
 setInterval(() => { document.querySelector('#clock').textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }, 1000);

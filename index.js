@@ -6,6 +6,7 @@ const http = require('node:http');
 const session = require('express-session');
 const { Server } = require('socket.io');
 const { Movements, goals } = require('mineflayer-pathfinder');
+const { createProxyMiddleware } = require('http-proxy-middleware');
 
 const { requireAuth, requireAdmin } = require('./lib/auth');
 const userStore = require('./lib/userStore');
@@ -230,8 +231,45 @@ io.on('connection', socket => {
 });
 
 // ---------------------------------------------------------------------------
-// Resilience: don't let one bad event handler take the whole panel down.
+// Live 3D viewer — each connected bot runs its own prismarine-viewer server
+// on a loopback-only internal port. We proxy it through the single public
+// port so it works behind Railway/any PaaS without exposing extra ports.
 // ---------------------------------------------------------------------------
+function getViewerProxyForUser(username) {
+  const bot = botManager.get(username);
+  if (!bot?.viewerPort) return null;
+  if (bot._viewerProxy && bot._viewerProxyPort === bot.viewerPort) return bot._viewerProxy;
+  bot._viewerProxy = createProxyMiddleware({
+    target: `http://127.0.0.1:${bot.viewerPort}`,
+    changeOrigin: true,
+    ws: true,
+    pathRewrite: { '^/viewer': '' }
+  });
+  bot._viewerProxyPort = bot.viewerPort;
+  return bot._viewerProxy;
+}
+
+app.use('/viewer', requireAuth, (req, res, next) => {
+  const proxy = getViewerProxyForUser(req.session.user.username);
+  if (!proxy) return res.status(503).send('Live view is not available yet. Start the bot and wait for it to connect.');
+  return proxy(req, res, next);
+});
+
+// Express doesn't forward WebSocket 'upgrade' events to middleware on its
+// own, so we handle it manually — reusing the same session cookie to figure
+// out which user's (and therefore which internal port's) viewer to proxy to.
+httpServer.on('upgrade', (request, socket, head) => {
+  if (!request.url.startsWith('/viewer')) return; // let socket.io's own listener handle the rest
+  const fakeRes = { getHeader() {}, setHeader() {}, end() {}, writeHead() {}, on() {}, once() {}, emit() {} };
+  sessionMiddleware(request, fakeRes, () => {
+    const username = request.session?.user?.username;
+    const proxy = username ? getViewerProxyForUser(username) : null;
+    if (!proxy) { socket.destroy(); return; }
+    proxy.upgrade(request, socket, head);
+  });
+});
+
+
 process.on('unhandledRejection', err => console.error('Unhandled rejection:', err));
 process.on('uncaughtException', err => console.error('Uncaught exception:', err));
 
