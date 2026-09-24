@@ -48,6 +48,11 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 > these as **Service Variables** instead of a `.env` file — Railway's own
 > `PORT` will be picked up automatically.
 
+To use a permitted SOCKS5 VPN/proxy only after the server rejects the normal
+connection for its IP limit, set `MC_PROXY` as a service variable. Use
+`socks5://host:port` or `socks5://username:password@host:port`. The bot starts
+normally, detects the IP-limit kick, and uses the proxy on the next reconnect.
+
 **3. Run it**
 ```bash
 npm start
