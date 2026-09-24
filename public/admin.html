@@ -8,25 +8,20 @@
     <link rel="stylesheet" href="/styles.css">
   </head>
   <body>
-    <video class="background-video" autoplay muted loop playsinline aria-hidden="true">
-      <source src="/aurora-background.mp4" type="video/mp4">
-    </video>
-    <div class="video-overlay" aria-hidden="true"></div>
-    <div class="snowfield" id="snowfield" aria-hidden="true"></div>
-
     <main class="shell">
       <header class="topbar">
-        <div class="brand"><img class="brand-mark" src="/aurora-bot.png" alt="Aurora Bot"><span>Aurora <b>Bot</b></span></div>
+        <div class="brand"><img class="brand-mark" src="/aurora-bot.png" alt="Aurora Bot"><span>Aurora Bot</span></div>
         <div class="topbar-meta">
-          <span class="live-dot"></span><span>ADMIN</span><span class="topbar-divider"></span><span id="clock">--:--</span>
-          <span class="topbar-divider"></span><a class="admin-link" href="/">Dashboard</a><span class="user-chip" id="user-chip">--</span>
+          <span class="clock" id="clock">--:--</span>
+          <span class="topbar-divider"></span>
+          <a class="admin-link" href="/">Dashboard</a>
+          <span class="user-chip" id="user-chip">--</span>
           <button class="logout-button" id="logout-button" title="Log out">Log out</button>
         </div>
       </header>
 
       <section class="hero-row">
         <div>
-          <p class="eyebrow">USER MANAGEMENT</p>
           <h1>Give people access.</h1>
           <p class="lede">Create an account for each person who should run their own bot. There is no public sign-up — every account starts here.</p>
         </div>
@@ -35,14 +30,14 @@
       <section class="workspace admin-workspace">
         <div class="panel console-panel">
           <div class="panel-heading">
-            <div><p class="eyebrow">ACCOUNTS</p><h2>Existing users</h2></div>
+            <h2>Existing users</h2>
             <span class="event-count" id="user-count">0 users</span>
           </div>
           <div class="user-list" id="user-list"><span class="empty-route">No users yet. Create the first one →</span></div>
         </div>
 
         <aside class="panel controls-panel">
-          <div class="panel-heading"><div><p class="eyebrow">NEW ACCOUNT</p><h2>Create a user</h2></div></div>
+          <div class="panel-heading"><h2>Create a user</h2></div>
           <form class="config-form" id="create-user-form" style="border-top:0;">
             <label>Username<input id="new-username" required autocomplete="off" placeholder="e.g. jordan"></label>
             <label>Password<input id="new-password" type="password" required autocomplete="new-password" placeholder="At least 6 characters"></label>

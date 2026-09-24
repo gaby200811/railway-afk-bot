@@ -4,6 +4,7 @@ const path = require('path');
 const express = require('express');
 const http = require('node:http');
 const session = require('express-session');
+const FileStore = require('session-file-store')(session);
 const { Server } = require('socket.io');
 const { Movements, goals } = require('mineflayer-pathfinder');
 const { createProxyMiddleware } = require('http-proxy-middleware');
@@ -34,11 +35,18 @@ const io = new Server(httpServer);
 app.set('trust proxy', 1); // required for secure cookies behind Railway/most PaaS reverse proxies
 app.use(express.json());
 
+const dataDir = process.env.RAILWAY_VOLUME_MOUNT_PATH || path.join(__dirname, 'data');
+
 const sessionMiddleware = session({
   name: 'aurora.sid',
   secret: SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
+  store: new FileStore({
+    path: path.join(dataDir, 'sessions'),
+    ttl: 60 * 60 * 24 * 7, // seconds, matches cookie maxAge below
+    logFn: () => {} // the default store logging is noisy; our own logs cover errors
+  }),
   cookie: {
     httpOnly: true,
     sameSite: 'lax',

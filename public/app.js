@@ -4,11 +4,6 @@ const eventCount = document.querySelector('#event-count');
 let eventTotal = 0;
 let versionOptions = [];
 
-document.addEventListener('pointermove', event => {
-  document.documentElement.style.setProperty('--mx', `${event.clientX}px`);
-  document.documentElement.style.setProperty('--my', `${event.clientY}px`);
-});
-
 function renderVersionOptions(versions) {
   if (!versions?.length || versions.join(',') === versionOptions.join(',')) return;
   versionOptions = versions;
@@ -25,7 +20,8 @@ function renderVersionOptions(versions) {
 function updateState(state) {
   const status = document.querySelector('#status');
   status.textContent = state.status[0].toUpperCase() + state.status.slice(1);
-  status.style.color = state.status === 'online' ? 'var(--lime)' : state.status === 'connecting' ? '#f4c875' : 'var(--muted)';
+  const statusMark = document.querySelector('#status-mark');
+  statusMark.style.background = state.status === 'online' ? 'var(--ok)' : state.status === 'connecting' ? 'var(--warn)' : 'var(--text-faint)';
   document.querySelector('#endpoint').textContent = `${state.host}:${state.port} · Java ${state.version}`;
   document.querySelector('#username').textContent = state.username;
   document.querySelector('#last-event').textContent = state.lastEvent;
@@ -179,15 +175,3 @@ document.querySelector('#toggle-viewer').addEventListener('click', () => {
 });
 
 setInterval(() => { document.querySelector('#clock').textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }, 1000);
-
-const snowfield = document.querySelector('#snowfield');
-for (let index = 0; index < 34; index += 1) {
-  const flake = document.createElement('span');
-  flake.className = 'flake';
-  flake.style.left = `${Math.random() * 100}%`;
-  flake.style.animationDelay = `${Math.random() * -18}s`;
-  flake.style.animationDuration = `${12 + Math.random() * 13}s`;
-  flake.style.opacity = `${0.12 + Math.random() * 0.3}`;
-  flake.style.setProperty('--drift', `${-30 + Math.random() * 60}px`);
-  snowfield.appendChild(flake);
-}

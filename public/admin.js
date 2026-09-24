@@ -69,16 +69,4 @@ document.querySelector('#create-user-form').addEventListener('submit', async eve
 
 setInterval(() => { document.querySelector('#clock').textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }, 1000);
 
-const snowfield = document.querySelector('#snowfield');
-for (let index = 0; index < 34; index += 1) {
-  const flake = document.createElement('span');
-  flake.className = 'flake';
-  flake.style.left = `${Math.random() * 100}%`;
-  flake.style.animationDelay = `${Math.random() * -18}s`;
-  flake.style.animationDuration = `${12 + Math.random() * 13}s`;
-  flake.style.opacity = `${0.12 + Math.random() * 0.3}`;
-  flake.style.setProperty('--drift', `${-30 + Math.random() * 60}px`);
-  snowfield.appendChild(flake);
-}
-
 loadUsers();

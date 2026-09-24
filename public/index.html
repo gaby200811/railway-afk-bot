@@ -8,39 +8,42 @@
     <link rel="stylesheet" href="/styles.css">
   </head>
   <body>
-    <video class="background-video" autoplay muted loop playsinline aria-hidden="true">
-      <source src="/aurora-background.mp4" type="video/mp4">
-    </video>
-    <div class="video-overlay" aria-hidden="true"></div>
-    <div class="snowfield" id="snowfield" aria-hidden="true"></div>
     <main class="shell">
       <header class="topbar">
-        <div class="brand"><img class="brand-mark" src="/aurora-bot.png" alt="Aurora Bot"><span>Aurora <b>Bot</b></span></div>
-        <div class="topbar-meta"><span class="live-dot"></span><span>OPERATOR CONSOLE</span><span class="topbar-divider"></span><span id="clock">--:--</span><span class="topbar-divider"></span><a class="admin-link" id="admin-link" href="/admin" hidden>Admin</a><span class="user-chip" id="user-chip">--</span><button class="logout-button" id="logout-button" title="Log out">Log out</button></div>
+        <div class="brand"><img class="brand-mark" src="/aurora-bot.png" alt="Aurora Bot"><span>Aurora Bot</span></div>
+        <div class="topbar-meta">
+          <span class="clock" id="clock">--:--</span>
+          <span class="topbar-divider"></span>
+          <a class="admin-link" id="admin-link" href="/admin" hidden>Admin</a>
+          <span class="user-chip" id="user-chip">--</span>
+          <button class="logout-button" id="logout-button" title="Log out">Log out</button>
+        </div>
       </header>
 
       <section class="hero-row">
         <div>
-          <p class="eyebrow">AURORA BOT / OPERATIONS</p>
           <h1>Quiet control for your server.</h1>
           <p class="lede">Connection, chat, and runtime controls in one place.</p>
         </div>
         <div class="connection-card">
-          <span class="status-label">CONNECTION</span>
+          <span class="status-label"><span class="mark" id="status-mark"></span>Connection</span>
           <strong id="status">Offline</strong>
           <span id="endpoint">pmcnet.in:19132 · Java 1.21.11</span>
         </div>
       </section>
 
       <section class="metrics" aria-label="Bot details">
-        <div class="metric"><span>BOT ACCOUNT</span><strong id="username">--</strong></div>
-        <div class="metric"><span>LAST EVENT</span><strong id="last-event">Waiting to connect</strong></div>
-        <div class="metric"><span>MODE</span><strong id="navigation-mode">Idle</strong></div>
+        <div class="metric"><span>Bot account</span><strong id="username">--</strong></div>
+        <div class="metric"><span>Last event</span><strong id="last-event">Waiting to connect</strong></div>
+        <div class="metric"><span>Mode</span><strong id="navigation-mode">Idle</strong></div>
       </section>
 
       <section class="workspace">
         <div class="panel console-panel">
-          <div class="panel-heading"><div><p class="eyebrow">ACTIVITY</p><h2>Live console <button class="info-button" data-tooltip="Server messages, bot events, and commands sent from this panel." aria-label="About live console">i</button></h2></div><span class="event-count" id="event-count">0 events</span></div>
+          <div class="panel-heading">
+            <h2>Live console <button class="info-button" data-tooltip="Server messages, bot events, and commands sent from this panel." aria-label="About live console">i</button></h2>
+            <span class="event-count" id="event-count">0 events</span>
+          </div>
           <div class="console" id="console" aria-live="polite"></div>
           <form class="command-form" id="command-form">
             <span class="prompt-symbol">›</span>
@@ -48,24 +51,24 @@
             <button type="submit" title="Send command">Send <span>↵</span></button>
           </form>
           <section class="telemetry" aria-label="Bot telemetry">
-            <div class="telemetry-heading"><p class="eyebrow">TELEMETRY</p><button class="info-button" data-tooltip="Live values reported by the connected bot." aria-label="About bot telemetry">i</button></div>
+            <div class="telemetry-heading"><h3>Telemetry</h3><button class="info-button" data-tooltip="Live values reported by the connected bot." aria-label="About bot telemetry">i</button></div>
             <div class="spec-grid">
-              <div class="spec"><span>HEALTH</span><strong id="health">--</strong><small>/ 20</small></div>
-              <div class="spec"><span>HUNGER</span><strong id="food">--</strong><small>/ 20</small></div>
-              <div class="spec"><span>POSITION</span><strong id="position">--</strong></div>
-              <div class="spec"><span>LATENCY</span><strong id="ping">--</strong><small>ms</small></div>
+              <div class="spec"><span>Health</span><strong id="health">--</strong><small>/ 20</small></div>
+              <div class="spec"><span>Hunger</span><strong id="food">--</strong><small>/ 20</small></div>
+              <div class="spec"><span>Position</span><strong id="position">--</strong></div>
+              <div class="spec"><span>Latency</span><strong id="ping">--</strong><small>ms</small></div>
             </div>
           </section>
           <section class="runtime-summary" aria-label="Runtime summary">
-            <div class="telemetry-heading"><p class="eyebrow">RUNTIME PROFILE</p><button class="info-button" data-tooltip="The capabilities currently active in Aurora Bot." aria-label="About runtime profile">i</button></div>
+            <div class="telemetry-heading"><h3>Runtime profile</h3><button class="info-button" data-tooltip="The capabilities currently active in Aurora Bot." aria-label="About runtime profile">i</button></div>
             <div class="runtime-list">
-              <div><span>AUTHENTICATION</span><strong>Automatic login</strong></div>
-              <div><span>AFK BEHAVIOR</span><strong>Pathfinder movement</strong></div>
-              <div><span>FARMING AUTOMATION</span><strong class="planned">Planned</strong></div>
+              <div><span>Authentication</span><strong>Automatic login</strong></div>
+              <div><span>AFK behavior</span><strong>Pathfinder movement</strong></div>
+              <div><span>Farming automation</span><strong class="planned">Planned</strong></div>
             </div>
           </section>
           <section class="live-view" aria-label="Live 3D view">
-            <div class="telemetry-heading"><p class="eyebrow">LIVE VIEW</p><button class="info-button" data-tooltip="A live 3D render of what your bot sees, streamed straight from the Minecraft world." aria-label="About live view">i</button></div>
+            <div class="telemetry-heading"><h3>Live view</h3><button class="info-button" data-tooltip="A live 3D render of what your bot sees, streamed straight from the Minecraft world." aria-label="About live view">i</button></div>
             <button class="button" id="toggle-viewer" disabled>Open 3D view <span>▶</span></button>
             <div class="viewer-frame-wrap" id="viewer-frame-wrap" hidden>
               <iframe id="viewer-frame" class="viewer-frame" title="Live 3D view" loading="lazy"></iframe>
@@ -74,14 +77,14 @@
         </div>
 
         <aside class="panel controls-panel">
-          <div class="panel-heading"><div><p class="eyebrow">CONTROL</p><h2>Bot controls <button class="info-button" data-tooltip="Start, stop, or reconnect the Minecraft bot." aria-label="About bot controls">i</button></h2></div></div>
+          <div class="panel-heading"><h2>Bot controls <button class="info-button" data-tooltip="Start, stop, or reconnect the Minecraft bot." aria-label="About bot controls">i</button></h2></div>
           <div class="control-actions">
             <button class="button button-primary" data-action="start">Start bot <span>→</span></button>
             <button class="button" data-action="reconnect">Reconnect <span>↻</span></button>
             <button class="button button-danger" data-action="stop">Stop bot <span>×</span></button>
           </div>
           <div class="route-section">
-            <div class="subheading"><p class="eyebrow">NAVIGATION <span class="beta-badge">BETA</span></p><h3>Farm route <button class="info-button" data-tooltip="Save walkable positions and send the bot to them with pathfinding." aria-label="About farm route">i</button></h3></div>
+            <div class="subheading"><h3>Farm route <span class="beta-badge">Beta</span></h3><button class="info-button" data-tooltip="Save walkable positions and send the bot to them with pathfinding." aria-label="About farm route">i</button></div>
             <div class="route-status"><span class="route-indicator" id="route-indicator"></span><span id="route-status">Not recording</span><strong id="route-count">0 points</strong></div>
             <div class="route-actions">
               <button class="button button-record" data-route="start">Record route <span>●</span></button>
@@ -92,7 +95,7 @@
             <button class="clear-route" data-route="clear">Clear saved route</button>
           </div>
           <form class="config-form" id="config-form">
-            <div class="subheading"><p class="eyebrow">CONNECTION</p><h3>Server settings <button class="info-button" data-tooltip="Change the server address, port, account, version, or login password." aria-label="About server settings">i</button></h3></div>
+            <div class="subheading"><h3>Server settings</h3><button class="info-button" data-tooltip="Change the server address, port, account, version, or login password." aria-label="About server settings">i</button></div>
             <label>Server address<input id="config-host" required></label>
             <label>Port<input id="config-port" type="number" min="1" max="65535" required></label>
             <label>Bot username<input id="config-username" required></label>
