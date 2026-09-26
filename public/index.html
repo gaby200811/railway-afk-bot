@@ -101,6 +101,10 @@
             <label>Bot username<input id="config-username" required></label>
             <label>Version<select id="config-version" required></select></label>
             <label>Password<input id="config-password" type="password" placeholder="Leave unchanged"></label>
+            <label class="toggle-row" for="config-use-proxy">
+              <span>Connect through SOCKS5 proxy</span>
+              <input id="config-use-proxy" type="checkbox">
+            </label>
             <button class="button button-save" type="submit">Save settings <span>✓</span></button>
             <p class="form-message" id="form-message"></p>
           </form>

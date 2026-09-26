@@ -1,59 +1,63 @@
 /* ==========================================================================
    Aurora Bot — design tokens
-   A light, paper-toned operator console. Headings in Space Grotesk, UI text
-   in Inter, and a real dark terminal module for console/log/data content
-   (genuine light-IDE-with-dark-terminal pattern, not a decorative flourish).
+   A dark, lantern-lit operator console. One mono family (IBM Plex Mono)
+   carries headings, labels, and data; Inter carries body copy. The live
+   console keeps its own cooler, near-black CRT module so it reads as a
+   real terminal window inside a warmer amber-lit panel, not a themed box.
    ========================================================================== */
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
   /* surfaces */
-  --bg: #f4f3ec;
-  --surface: #ffffff;
-  --surface-muted: #ecebe1;
-  --surface-sunken: #e4e3d7;
+  --bg: #0c0e13;
+  --surface: #12151c;
+  --surface-muted: #181c25;
+  --surface-sunken: #090a0e;
 
   /* lines */
-  --border: #dad8cb;
-  --border-strong: #bcb9a6;
+  --border: #232733;
+  --border-strong: #363c4c;
 
   /* text */
-  --text: #1c1e18;
-  --text-muted: #6c6f60;
-  --text-faint: #9a9c8b;
+  --text: #e7e5dc;
+  --text-muted: #8b92a3;
+  --text-faint: #545a6b;
 
-  /* accent — deep grass green, used sparingly */
-  --accent: #2f7d4f;
-  --accent-dark: #235f3c;
-  --accent-soft: #e3efe4;
+  /* accent — lantern amber, used sparingly */
+  --accent: #e0a53f;
+  --accent-dark: #b9852e;
+  --accent-soft: rgba(224, 165, 63, 0.13);
 
   /* status */
-  --ok: #2f7d4f;
-  --warn: #b8791a;
-  --warn-soft: #f6ead2;
-  --danger: #b23a2e;
-  --danger-soft: #f7e2df;
+  --ok: #5cc088;
+  --ok-soft: rgba(92, 192, 136, 0.13);
+  --warn: #dd8a41;
+  --warn-soft: rgba(221, 138, 65, 0.14);
+  --danger: #e2645a;
+  --danger-soft: rgba(226, 100, 90, 0.14);
 
-  /* terminal module (console output) */
-  --term-bg: #15160f;
-  --term-surface: #1d1f16;
-  --term-border: #33352a;
-  --term-text: #dcdccb;
-  --term-muted: #82836f;
-  --term-green: #7fce97;
-  --term-red: #ff9686;
-  --term-amber: #ffcb75;
-  --term-blue: #93b8f2;
+  /* terminal module (console output) — cooler and darker than the chrome */
+  --term-bg: #05070a;
+  --term-surface: #0a0d10;
+  --term-border: #1a2028;
+  --term-text: #d3e8dc;
+  --term-muted: #52705f;
+  --term-green: #79dda2;
+  --term-red: #ff8b7c;
+  --term-amber: #ffcc7a;
+  --term-blue: #7cc4f2;
 
-  --font-display: 'Space Grotesk', 'Inter', sans-serif;
+  --font-display: 'IBM Plex Mono', ui-monospace, monospace;
   --font-body: 'Inter', sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
 
-  --radius-lg: 10px;
-  --radius-md: 6px;
-  --radius-sm: 3px;
+  --radius-lg: 6px;
+  --radius-md: 4px;
+  --radius-sm: 2px;
 
-  --shadow-card: 0 1px 2px rgba(28, 30, 24, 0.04), 0 8px 20px rgba(28, 30, 24, 0.05);
+  --shadow-card: 0 1px 0 rgba(0, 0, 0, 0.5), 0 10px 26px rgba(0, 0, 0, 0.4);
+  --glow-ok: 0 0 0 3px var(--ok-soft), 0 0 12px rgba(92, 192, 136, 0.55);
+  --glow-warn: 0 0 0 3px var(--warn-soft), 0 0 12px rgba(221, 138, 65, 0.5);
 }
 
 * { box-sizing: border-box; }
@@ -63,8 +67,8 @@ html { scroll-padding-top: 20px; }
 body {
   margin: 0;
   background:
-    repeating-linear-gradient(0deg, rgba(28, 30, 24, 0.028) 0 1px, transparent 1px 96px),
-    repeating-linear-gradient(90deg, rgba(28, 30, 24, 0.028) 0 1px, transparent 1px 96px),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.018) 0 1px, transparent 1px 96px),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.018) 0 1px, transparent 1px 96px),
     var(--bg);
   color: var(--text);
   font: 15px/1.5 var(--font-body);
@@ -75,7 +79,7 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; letter-spacing:
 
 a { color: var(--accent); }
 
-::selection { background: var(--accent-soft); color: var(--accent-dark); }
+::selection { background: var(--accent-soft); color: var(--accent); }
 
 /* thin, quiet scrollbars */
 * { scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
@@ -88,11 +92,11 @@ a { color: var(--accent); }
 .shell { position: relative; max-width: 1240px; margin: 0 auto; padding: 0 32px 40px; }
 
 /* ==========================================================================
-   Signature mark — a small solid square used as the recurring motif
-   (a nod to the bot's voxel world, kept structural rather than decorative)
+   Signature mark — a small solid square, the recurring motif. It glows only
+   when live (connected / recording) — the one bold, memorable moment.
    ========================================================================== */
-.mark { display: inline-block; width: 9px; height: 9px; background: var(--accent); flex: 0 0 auto; }
-.mark.mark-warn { background: var(--warn); }
+.mark { display: inline-block; width: 9px; height: 9px; background: var(--text-faint); flex: 0 0 auto; border-radius: 1px; }
+.mark.mark-warn { background: var(--warn); box-shadow: var(--glow-warn); }
 .mark.mark-danger { background: var(--danger); }
 .mark.mark-muted { background: var(--text-faint); }
 
@@ -107,7 +111,7 @@ a { color: var(--accent); }
   border-bottom: 1px solid var(--border);
 }
 
-.brand { display: flex; align-items: center; gap: 10px; font-family: var(--font-display); font-size: 17px; font-weight: 600; color: var(--text); }
+.brand { display: flex; align-items: center; gap: 10px; font-family: var(--font-display); font-size: 16px; font-weight: 600; color: var(--text); }
 .brand-mark { width: 30px; height: 30px; display: block; object-fit: cover; border-radius: var(--radius-sm); border: 1px solid var(--border-strong); }
 
 .topbar-meta { display: flex; align-items: center; gap: 10px; }
@@ -138,7 +142,7 @@ a { color: var(--accent); }
   cursor: pointer;
   transition: background-color .15s ease, border-color .15s ease, color .15s ease;
 }
-.admin-link:hover { border-color: var(--accent); color: var(--accent-dark); background: var(--accent-soft); }
+.admin-link:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
 .logout-button:hover { border-color: var(--danger); color: var(--danger); background: var(--danger-soft); }
 
 /* ==========================================================================
@@ -151,7 +155,7 @@ a { color: var(--accent); }
   gap: 28px;
   padding: 40px 0 28px;
 }
-.hero-row h1 { font-size: clamp(24px, 2.6vw, 32px); line-height: 1.15; margin-bottom: 8px; }
+.hero-row h1 { font-size: clamp(22px, 2.4vw, 30px); line-height: 1.2; margin-bottom: 8px; }
 .lede { color: var(--text-muted); margin: 0; max-width: 46ch; }
 
 .connection-card {
@@ -163,7 +167,7 @@ a { color: var(--accent); }
   box-shadow: var(--shadow-card);
 }
 .status-label { display: flex; align-items: center; gap: 8px; color: var(--text-muted); font-size: 11.5px; margin-bottom: 8px; }
-.connection-card strong { display: block; font-family: var(--font-display); font-size: 18px; margin-bottom: 4px; }
+.connection-card strong { display: block; font-family: var(--font-display); font-size: 17px; margin-bottom: 4px; }
 .connection-card > span:last-child { display: block; color: var(--text-muted); font-family: var(--font-mono); font-size: 11.5px; }
 
 /* ==========================================================================
@@ -180,7 +184,7 @@ a { color: var(--accent); }
 .metric:first-child { padding-left: 0; }
 .metric:last-child { border-right: 0; }
 .metric span { display: block; color: var(--text-muted); font-size: 12px; margin-bottom: 6px; }
-.metric strong { display: block; font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.metric strong { display: block; font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: var(--font-mono); }
 
 /* ==========================================================================
    Workspace / panels
@@ -202,7 +206,7 @@ a { color: var(--accent); }
   padding: 18px 20px;
   border-bottom: 1px solid var(--border);
 }
-.panel-heading h2 { font-size: 16px; display: flex; align-items: center; }
+.panel-heading h2 { font-size: 15px; display: flex; align-items: center; }
 .event-count { color: var(--text-faint); font-family: var(--font-mono); font-size: 11.5px; }
 
 /* ---- Terminal / console module ---- */
@@ -255,10 +259,10 @@ a { color: var(--accent); }
   font: 500 12px var(--font-body);
   transition: border-color .15s ease, background-color .15s ease;
 }
-.command-form button:hover { border-color: var(--term-green); background: #202318; }
+.command-form button:hover { border-color: var(--term-green); background: #0f1712; }
 .command-form button span { color: var(--term-green); margin-left: 8px; }
 
-/* ---- Telemetry / runtime / live view (light sections beneath the terminal) ---- */
+/* ---- Telemetry / runtime / live view ---- */
 .telemetry, .runtime-summary, .live-view { padding: 18px 20px; border-top: 1px solid var(--border); }
 .telemetry-heading { display: flex; align-items: center; justify-content: space-between; }
 .telemetry-heading h3, .telemetry-heading p { margin: 0; font-size: 13px; font-weight: 600; color: var(--text-muted); }
@@ -291,7 +295,7 @@ a { color: var(--accent); }
 
 .live-view #toggle-viewer { width: 100%; justify-content: center; }
 .live-view #toggle-viewer:disabled { opacity: .5; cursor: not-allowed; }
-.viewer-frame-wrap { margin-top: 12px; border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; background: #0c0d09; aspect-ratio: 16 / 9; }
+.viewer-frame-wrap { margin-top: 12px; border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; background: var(--term-bg); aspect-ratio: 16 / 9; }
 .viewer-frame { width: 100%; height: 100%; border: 0; display: block; }
 
 /* ==========================================================================
@@ -315,14 +319,14 @@ a { color: var(--accent); }
 .button:hover { background: var(--surface-muted); border-color: var(--text-faint); }
 .button span { color: var(--text-muted); }
 
-.button-primary { background: var(--accent); border-color: var(--accent); color: #ffffff; }
-.button-primary span { color: #d8f0df; }
+.button-primary { background: var(--accent); border-color: var(--accent); color: #17130a; }
+.button-primary span { color: #4a3611; }
 .button-primary:hover { background: var(--accent-dark); border-color: var(--accent-dark); }
 
 .button-danger { color: var(--danger); }
 .button-danger:hover { background: var(--danger-soft); border-color: var(--danger); }
 
-.button-record { color: var(--accent-dark); }
+.button-record { color: var(--accent); }
 .button-save { width: 100%; margin-top: 4px; }
 
 .control-actions { display: grid; gap: 8px; padding: 18px 20px; }
@@ -334,7 +338,7 @@ a { color: var(--accent); }
   content: '';
   position: absolute; inset: 0; margin: auto;
   width: 14px; height: 14px;
-  border: 2px solid rgba(0,0,0,.15);
+  border: 2px solid rgba(255, 255, 255, .12);
   border-top-color: var(--accent);
   border-radius: 50%;
   animation: spin .7s linear infinite;
@@ -360,8 +364,8 @@ a { color: var(--accent); }
 .route-section { border-top: 1px solid var(--border); padding: 18px 20px; }
 .route-status { display: flex; align-items: center; gap: 8px; color: var(--text-muted); font-size: 12px; }
 .route-status strong { margin-left: auto; color: var(--text); font-weight: 600; }
-.route-indicator { width: 9px; height: 9px; background: var(--text-faint); }
-.route-indicator.active { background: var(--accent); }
+.route-indicator { width: 9px; height: 9px; background: var(--text-faint); border-radius: 1px; }
+.route-indicator.active { background: var(--danger); box-shadow: 0 0 0 3px var(--danger-soft), 0 0 10px rgba(226, 100, 90, .5); }
 .route-actions { display: grid; gap: 7px; margin-top: 14px; }
 .checkpoint-row { display: flex; gap: 6px; margin-top: 10px; }
 .checkpoint-row input { min-width: 0; width: 100%; }
@@ -374,7 +378,7 @@ a { color: var(--accent); }
 .route-point strong { font-size: 12.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .route-point span { color: var(--text-muted); font: 11px var(--font-mono); }
 
-.point-go { border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--surface); color: var(--accent-dark); padding: 5px 9px; cursor: pointer; font: 500 11px var(--font-body); flex: 0 0 auto; }
+.point-go { border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--surface); color: var(--accent); padding: 5px 9px; cursor: pointer; font: 500 11px var(--font-body); flex: 0 0 auto; }
 .point-go:hover { border-color: var(--accent); background: var(--accent-soft); }
 
 .clear-route { border: 0; background: none; color: var(--text-faint); padding: 12px 0 0; cursor: pointer; font: 12px var(--font-body); }
@@ -386,14 +390,22 @@ label { display: block; color: var(--text-muted); font-size: 12.5px; font-weight
 label input, label select {
   display: block; width: 100%; margin-top: 6px;
   border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
-  outline: 0; color: var(--text); background: var(--surface);
+  outline: 0; color: var(--text); background: var(--surface-sunken);
   padding: 9px 10px; font: 13px var(--font-body);
 }
 label input:hover, label select:hover, .checkpoint-row input:hover { border-color: var(--text-faint); }
 label input:focus, label select:focus { border-color: var(--accent); }
+label select option { background: var(--surface); color: var(--text); }
+
+.toggle-row {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 12.5px; color: var(--text-muted); font-weight: 500; margin: 14px 0;
+  cursor: pointer;
+}
+.toggle-row input { display: block; width: 16px; height: 16px; margin: 0; cursor: pointer; accent-color: var(--accent); }
 
 .form-message { min-height: 16px; margin: 10px 0 0; color: var(--text-muted); font-size: 12px; }
-.form-message.success { color: var(--accent-dark); }
+.form-message.success { color: var(--ok); }
 .form-message.error { color: var(--danger); }
 
 .note {
@@ -421,13 +433,13 @@ label input:focus, label select:focus { border-color: var(--accent); }
   background: transparent; color: var(--text-muted);
   cursor: help; font: 11px Georgia, serif;
 }
-.info-button:hover, .info-button:focus-visible { border-color: var(--accent); color: var(--accent-dark); }
+.info-button:hover, .info-button:focus-visible { border-color: var(--accent); color: var(--accent); }
 .info-button::after {
   content: attr(data-tooltip);
   position: absolute; z-index: 10; left: 24px; top: 50%;
   width: 220px; padding: 10px 11px;
   border: 1px solid var(--border-strong); border-radius: var(--radius-md);
-  background: var(--surface); color: var(--text);
+  background: var(--surface-muted); color: var(--text);
   box-shadow: var(--shadow-card);
   font: 12px/1.45 var(--font-body); text-align: left;
   opacity: 0; pointer-events: none;
@@ -442,7 +454,7 @@ label input:focus, label select:focus { border-color: var(--accent); }
 .confirm-overlay {
   position: fixed; inset: 0; z-index: 50;
   display: grid; place-items: center;
-  background: rgba(20, 21, 16, 0.45);
+  background: rgba(3, 4, 6, 0.6);
   animation: fade-in .12s ease;
 }
 .confirm-box {
@@ -451,7 +463,7 @@ label input:focus, label select:focus { border-color: var(--accent); }
   border-radius: var(--radius-lg);
   background: var(--surface);
   padding: 22px;
-  box-shadow: 0 20px 50px rgba(20, 21, 16, 0.25);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
 }
 .confirm-box p { margin: 0 0 18px; font-size: 13.5px; line-height: 1.5; color: var(--text); }
 .confirm-actions { display: flex; justify-content: flex-end; gap: 8px; }
@@ -467,7 +479,7 @@ label input:focus, label select:focus { border-color: var(--accent); }
   color: var(--text-faint); font-size: 12px;
 }
 .footer strong { color: var(--text-muted); font-weight: 600; }
-.footer a { color: var(--accent-dark); text-decoration: none; }
+.footer a { color: var(--accent); text-decoration: none; }
 .footer a:hover { text-decoration: underline; }
 
 /* ==========================================================================
@@ -482,8 +494,8 @@ label input:focus, label select:focus { border-color: var(--accent); }
   padding: 36px 32px 30px;
   box-shadow: var(--shadow-card);
 }
-.login-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 22px; font-family: var(--font-display); font-size: 16px; font-weight: 600; }
-.login-card h1 { font-size: 24px; margin-bottom: 8px; }
+.login-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 22px; font-family: var(--font-display); font-size: 15px; font-weight: 600; }
+.login-card h1 { font-size: 22px; margin-bottom: 8px; }
 .login-card .lede { margin-bottom: 22px; }
 .login-form label { margin: 0 0 14px; }
 .login-footer { border: 0; margin-top: 22px; justify-content: center; gap: 10px; padding-top: 0; }

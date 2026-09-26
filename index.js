@@ -218,6 +218,23 @@ app.post('/api/action/:action', requireAuth, (req, res) => {
   res.json(bot.state);
 });
 
+// PERF: the 3D viewer (a full prismarine-viewer renderer per bot) only runs
+// while someone actually has it open in the UI, not for the bot's whole
+// connected lifetime — see the note above BotSession.startViewer().
+app.post('/api/viewer/:action', requireAuth, (req, res) => {
+  const bot = botManager.getOrCreate(req.session.user.username, io);
+  const { action } = req.params;
+  if (action === 'start') {
+    const result = bot.startViewer();
+    if (!result.ok) return res.status(400).json({ error: result.error });
+  } else if (action === 'stop') {
+    bot.stopViewer();
+  } else {
+    return res.status(404).json({ error: 'Unknown viewer action' });
+  }
+  res.json({ viewerRunning: Boolean(bot.viewerPort) });
+});
+
 // ---------------------------------------------------------------------------
 // Socket.io — authenticated via the same session cookie, each socket only
 // joins its own user's private room.

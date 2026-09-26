@@ -22,6 +22,7 @@ function updateState(state) {
   status.textContent = state.status[0].toUpperCase() + state.status.slice(1);
   const statusMark = document.querySelector('#status-mark');
   statusMark.style.background = state.status === 'online' ? 'var(--ok)' : state.status === 'connecting' ? 'var(--warn)' : 'var(--text-faint)';
+  statusMark.style.boxShadow = state.status === 'online' ? 'var(--glow-ok)' : state.status === 'connecting' ? 'var(--glow-warn)' : 'none';
   document.querySelector('#endpoint').textContent = `${state.host}:${state.port} · Java ${state.version}`;
   document.querySelector('#username').textContent = state.username;
   document.querySelector('#last-event').textContent = state.lastEvent;
@@ -38,20 +39,23 @@ function updateState(state) {
   setIfClean('#config-username', state.username);
   renderVersionOptions(state.supportedVersions);
   setIfClean('#config-version', state.version);
+  setIfClean('#config-use-proxy', Boolean(state.useProxy));
 }
 
 const dirtyFields = new Set();
-const configFieldIds = ['#config-host', '#config-port', '#config-username', '#config-version'];
+const configFieldIds = ['#config-host', '#config-port', '#config-username', '#config-version', '#config-use-proxy'];
 
 configFieldIds.forEach(selector => {
   const el = document.querySelector(selector);
-  const eventName = el.tagName === 'SELECT' ? 'change' : 'input';
+  const eventName = el.type === 'checkbox' ? 'change' : el.tagName === 'SELECT' ? 'change' : 'input';
   el.addEventListener(eventName, () => dirtyFields.add(selector));
 });
 
 function setIfClean(selector, value) {
   if (dirtyFields.has(selector)) return;
-  document.querySelector(selector).value = value;
+  const el = document.querySelector(selector);
+  if (el.type === 'checkbox') el.checked = Boolean(value);
+  else el.value = value;
 }
 
 function addLog(entry) {
@@ -127,7 +131,8 @@ document.querySelector('#config-form').addEventListener('submit', async event =>
     port: document.querySelector('#config-port').value,
     username: document.querySelector('#config-username').value,
     version: document.querySelector('#config-version').value,
-    password: document.querySelector('#config-password').value
+    password: document.querySelector('#config-password').value,
+    useProxy: document.querySelector('#config-use-proxy').checked
   };
   const response = await fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
   formMessage.textContent = response.ok ? 'Saved. Reconnect to apply.' : 'Check the connection values.';
@@ -160,18 +165,21 @@ function closeViewer() {
   if (button) button.innerHTML = 'Open 3D view <span>▶</span>';
 }
 
-document.querySelector('#toggle-viewer').addEventListener('click', () => {
+document.querySelector('#toggle-viewer').addEventListener('click', withLoading(document.querySelector('#toggle-viewer'), async () => {
   const wrap = document.querySelector('#viewer-frame-wrap');
   const frame = document.querySelector('#viewer-frame');
   const button = document.querySelector('#toggle-viewer');
   const opening = wrap.hidden;
   if (opening) {
+    const response = await fetch('/api/viewer/start', { method: 'POST' });
+    if (!response.ok) return; // bot state/log already explains why
     frame.src = '/viewer/';
     wrap.hidden = false;
     button.innerHTML = 'Close 3D view <span>▼</span>';
   } else {
+    await fetch('/api/viewer/stop', { method: 'POST' });
     closeViewer();
   }
-});
+}));
 
 setInterval(() => { document.querySelector('#clock').textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }, 1000);
